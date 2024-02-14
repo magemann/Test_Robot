@@ -1,0 +1,98 @@
+import cv2 as cv
+import glob
+import os
+
+#this is python code
+# Variable to store the latest point
+latest_point = None
+
+# Define the mouse callback function
+def click_event(event, x, y, flags, param):
+    global latest_point, img, image_paths, current_index, lineref
+    if event == cv.EVENT_LBUTTONDOWN:  # Check for left mouse click
+        latest_point = (x, y)  # Update the latest point with the new location
+        # Redraw the image with the latest point
+        img = draw_image_with_line_and_point(image_paths[current_index], lineref, latest_point)
+        draw_arrow(img,lineref[0],latest_point)
+        cv.imshow('Image Viewer', img)
+
+def draw_image_with_line_and_point(image_path, lineref, point):
+    # Load the current image
+    img = cv.imread(image_path)
+
+    # Draw a line on the image
+    line_color = (0, 255, 0)
+    line_thickness = 2
+    cv.line(img, tuple(lineref[0]), tuple(lineref[1]), line_color, line_thickness)
+
+    if point:
+        # Draw the latest point on the image
+        cv.circle(img, point, 3, (0, 0, 255), -1)
+
+    # Extract the filename to display as the image name
+    image_name = os.path.basename(image_path)
+
+    # Position for the text
+    position = (600, 100)
+
+    # Font settings
+    font = cv.FONT_HERSHEY_SIMPLEX
+    font_scale = 1
+    font_color = (255, 255, 255)  # White color
+    line_type = 2
+
+    # Put the text (image name) on the image
+    cv.putText(img, image_name, position, font, font_scale, font_color, line_type)
+    comment_Text(img)
+    return img
+
+def comment_Text(img):
+    position1 = (200, 50)
+    font = cv.FONT_HERSHEY_SIMPLEX
+    font_scale = 1
+    font_color = (255, 255, 255)  # White color
+    line_type = 2
+    comment = "n = next, b = back, d = delete point, q = quit **"
+    cv.putText(img, comment, position1, font, font_scale, font_color, line_type)
+    
+def draw_arrow(img, pointref, arrow_point,arrow_length=100, line_color=(0, 255, 0), arrow_color=(255, 255, 255), line_thickness=2, arrow_thickness=5):
+    #Turn = calculateTurn(line1,line2)
+    cv.arrowedLine(img, pointref, arrow_point, arrow_color, arrow_thickness, tipLength=0.3)
+
+def display_images(folder_path, lineref):
+    global img, image_paths, current_index
+    # Get paths of all images in the folder
+    image_paths = glob.glob(os.path.join(folder_path, '*'))  # Adjust the pattern as needed (e.g., '*.jpg' for JPG images only)
+    current_index = 0
+
+    quit_viewer = False  # Flag to indicate when to quit the viewer
+
+    while not quit_viewer:
+        # Load and display the current image with line and latest point
+        img = draw_image_with_line_and_point(image_paths[current_index], lineref, latest_point)
+        
+        cv.imshow('Image Viewer', img)
+
+        # Set the mouse callback function for the window
+        cv.setMouseCallback('Image Viewer', click_event)
+
+        # Wait for the right arrow key or 'q' to quit
+        while True:
+            key = cv.waitKey(0) & 0xFF
+            if key == 83 or key == 110:  # Right arrow key (might need adjustment) or 'n' for next
+                current_index = (current_index + 1) % len(image_paths)
+                break
+            elif key == 98:  # 'b' for back
+                current_index = (current_index - 1) % len(image_paths)
+                break
+            elif key == ord('q'):  # Quit the viewer
+                quit_viewer = True
+                break
+
+    cv.destroyAllWindows()
+
+# Replace the path with the path to your images folder
+folder_path = r'C:\Users\HP\Pictures\Camera Roll\New Folder\New folder'
+lineref = [(629, 504), (0, 827)]
+
+display_images(folder_path, lineref)
